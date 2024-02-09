@@ -10,14 +10,8 @@ import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.kafka.core.DefaultKafkaProducerFactory
-import org.springframework.kafka.core.KafkaAdmin
-import org.springframework.kafka.core.KafkaTemplate
-import org.springframework.kafka.core.ProducerFactory
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
-
-import org.springframework.kafka.core.ConsumerFactory
+import org.springframework.kafka.core.*
 import org.springframework.kafka.listener.ContainerProperties
 import org.springframework.kafka.support.serializer.JsonDeserializer
 import org.springframework.kafka.support.serializer.JsonSerializer
@@ -26,9 +20,11 @@ import org.springframework.kafka.support.serializer.JsonSerializer
 @Configuration
 class KafkaConfig(
         @Value("\${kafka.bootstrapAddress}")
-        private val servers: String,
-        @Value("\${kafka.topics.ad}")
-        private val topic: String
+        private val servers: String
+//        @Value("\${kafka.topics.impressionTopic}")
+//        private val impressionTopic: String,
+//        @Value("\${kafka.topics.clickTopic}")
+//        private val clickTopic: String
 ) {
 
     @Bean
@@ -38,22 +34,18 @@ class KafkaConfig(
         return KafkaAdmin(configs)
     }
 
+
+
     @Bean
-    fun porduto(): NewTopic {
-        return NewTopic(topic, 1, 1.toShort())
+    fun producerFactory(): ProducerFactory<String, Any> {
+        val configProps: MutableMap<String, Any> = HashMap()
+        configProps[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = servers
+        configProps[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
+        configProps[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = JsonSerializer::class.java
+        configProps[JsonDeserializer.TRUSTED_PACKAGES] = "*"
+
+        return DefaultKafkaProducerFactory(configProps)
     }
-
-
-        @Bean
-        fun producerFactory(): ProducerFactory<String, Any> {
-            val configProps: MutableMap<String, Any> = HashMap()
-            configProps[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = servers
-            configProps[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
-            configProps[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = JsonSerializer::class.java
-            configProps[JsonDeserializer.TRUSTED_PACKAGES] = "*"
-
-            return DefaultKafkaProducerFactory(configProps)
-        }
 
     @Bean
     fun consumerFactory(): ConsumerFactory<String?, AdEvent?> {
@@ -62,7 +54,6 @@ class KafkaConfig(
         config[ConsumerConfig.GROUP_ID_CONFIG] = "your-group-id"
         config[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
         config[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = JsonDeserializer::class.java
-//        config[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = true
         config[JsonDeserializer.TRUSTED_PACKAGES] = "*"
         return DefaultKafkaConsumerFactory(config)
     }
@@ -75,8 +66,8 @@ class KafkaConfig(
         return factory
     }
 
-        @Bean
-        fun kafkaTemplate(): KafkaTemplate<String, Any> {
-            return KafkaTemplate(producerFactory())
-        }
+    @Bean
+    fun kafkaTemplate(): KafkaTemplate<String, Any> {
+        return KafkaTemplate(producerFactory())
+    }
 }
