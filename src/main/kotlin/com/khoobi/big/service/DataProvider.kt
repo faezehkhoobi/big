@@ -23,7 +23,7 @@ class DataProvider(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Scheduled(initialDelay = 2000, fixedDelay = 300000)
+    @Scheduled(initialDelay = 2000, fixedDelay = 1000)
     fun provideData() {
         val now = Instant.now()
         val id = String() + now.epochSecond + Random.nextLong(1000, 9999);
@@ -34,9 +34,10 @@ class DataProvider(
                 .setHeader(KafkaHeaders.TOPIC, impressionTopic)
                 .build()
         kafkaTemplate.send(impressionEventMessage)
-//        if (Random.nextInt(3) < 2) {
+        //for randomly generate click data
+        if (Random.nextInt(3) < 2) {
             provideDataForClick(impressionEvent)
-//        }
+        }
     }
 
     fun provideDataForClick(impressionEvent: ImpressionEvent) {
